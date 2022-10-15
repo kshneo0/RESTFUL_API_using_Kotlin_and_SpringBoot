@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
  * date : 2022/10/13
  */
 @Service
-class GreetingsService {
+class GreetingService {
 
     @Value("\${message}")
     lateinit var message: String

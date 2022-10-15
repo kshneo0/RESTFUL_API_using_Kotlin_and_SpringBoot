@@ -1,8 +1,5 @@
 package com.kotlinspring.controller
 
-import com.kotlinspring.service.GreetingsService
-import com.ninjasquad.springmockk.MockkBean
-import io.mockk.every
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,16 +21,10 @@ class GreetingControllerIntgTest {
     @Autowired
     lateinit var webTestClient: WebTestClient
 
-    @MockkBean
-    lateinit var greetingsServiceMock: GreetingsService
-
     @Test
     fun retrieveGreeting() {
 
-        val name = "Dilip"
-        every {
-            greetingsServiceMock.retrieveGreeting((any()))
-        } returns "$name, Hello from default profile"
+        val name = "dilip"
 
         val result = webTestClient.get()
             .uri("/v1/greetings/{name}", name)
@@ -43,5 +34,6 @@ class GreetingControllerIntgTest {
             .returnResult()
 
         Assertions.assertEquals("$name, Hello from default profile", result.responseBody)
+
     }
 }
