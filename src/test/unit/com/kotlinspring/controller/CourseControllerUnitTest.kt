@@ -8,12 +8,14 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.just
 import io.mockk.runs
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 
 /**
@@ -31,16 +33,19 @@ class CourseControllerUnitTest {
     @MockkBean
     lateinit var courseServiceMock: CourseService
 
+
     @Test
     fun addCourse() {
-
-        val courseDTO = CourseDTO(null, "Build Restful APIs using SpringBoot and Kotlin", "Dilip Sundarraj")
+        //given
+        val courseDTO = courseDTO()
 
         every { courseServiceMock.addCourse(any()) } returns courseDTO(id = 1)
 
+        //when
         val savedCourseDTO = webTestClient
             .post()
             .uri("/v1/courses")
+            .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(courseDTO)
             .exchange()
             .expectStatus().isCreated
@@ -48,6 +53,7 @@ class CourseControllerUnitTest {
             .returnResult()
             .responseBody
 
+        //then
         Assertions.assertTrue {
             savedCourseDTO!!.id != null
         }
@@ -55,14 +61,16 @@ class CourseControllerUnitTest {
 
     @Test
     fun addCourse_validation() {
-
-        val courseDTO = CourseDTO(null, "", "")
+        //given
+        val courseDTO = courseDTO(name = "", category = "")
 
         every { courseServiceMock.addCourse(any()) } returns courseDTO(id = 1)
 
+        //when
         val response = webTestClient
             .post()
             .uri("/v1/courses")
+            .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(courseDTO)
             .exchange()
             .expectStatus().isBadRequest
@@ -70,6 +78,7 @@ class CourseControllerUnitTest {
             .returnResult()
             .responseBody
 
+        println("response : $response")
         assertEquals(
             "courseDTO.category must not be blank, courseDTO.name must not be blank", response
         )
@@ -78,16 +87,15 @@ class CourseControllerUnitTest {
     @Test
     fun addCourse_runtime_exception() {
         //given
-        val courseDTO = CourseDTO(null, "Build Restful APIs using SpringBoot and Kotlin", "Dilip Sundarraj")
-
+        val courseDTO = courseDTO()
         val errorMessage = "Unexpected Error Occurred!"
         every { courseServiceMock.addCourse(any()) } throws RuntimeException(errorMessage)
-
 
         //when
         val response = webTestClient
             .post()
             .uri("/v1/courses")
+            .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(courseDTO)
             .exchange()
             .expectStatus().is5xxServerError
@@ -95,8 +103,11 @@ class CourseControllerUnitTest {
             .returnResult()
             .responseBody
 
-        assertEquals(errorMessage, response)
+        assertEquals(
+            errorMessage, response
+        )
     }
+
 
     @Test
     fun retrieveAllCourses() {
@@ -105,14 +116,17 @@ class CourseControllerUnitTest {
             listOf(
                 CourseDTO(
                     1,
-                    "Build RestFul APis using Spring Boot and Kotlin", "Development"
+                    "Build RestFul APis using Spring Boot and Kotlin", "Development",
+                    1
                 ),
                 CourseDTO(
                     2,
-                    "Build Reactive Microservices using Spring WebFlux/SpringBoot", "Development"
+                    "Build Reactive Microservices using Spring WebFlux/SpringBoot", "Development",
+                    1
                 )
             )
         )
+
 
         val courseDTOs = webTestClient
             .get()
@@ -123,37 +137,39 @@ class CourseControllerUnitTest {
             .returnResult()
             .responseBody
 
-        println("coursDTOs : $courseDTOs")
+        println("courseDTOs : $courseDTOs")
+
         Assertions.assertEquals(2, courseDTOs!!.size)
+
     }
 
     @Test
     fun updateCourse() {
 
-        val course = Course(
+        val updatedCourseEntity = Course(
             null,
-            "Build Restful APIs using SpringBoot and Kotlin", "Development"
+            "Apache Kafka for Developers using Spring Boot1", "Development"
         )
 
-        every { courseServiceMock.updateCourse(any(), any()) } returns courseDTO(
+        every { courseServiceMock.updateCourse(any(), any()) } returns CourseDTO(
             100,
-            "Build Restful APIs using SpringBoot and Kotlin1"
+            "Apache Kafka for Developers using Spring Boot1", "Development",
+            1
         )
 
-        val updatedCourseDTO = CourseDTO(null, "Build Restful APIs using SpringBoot and Kotlin1", "Development")
 
-
-        val updatedCourse = webTestClient
+        val updatedCourseDTO = webTestClient
             .put()
             .uri("/v1/courses/{courseId}", 100)
-            .bodyValue(updatedCourseDTO)
+            .bodyValue(updatedCourseEntity)
             .exchange()
             .expectStatus().isOk
             .expectBody(CourseDTO::class.java)
             .returnResult()
             .responseBody
 
-        Assertions.assertEquals("Build Restful APIs using SpringBoot and Kotlin1", updatedCourse?.name)
+        Assertions.assertEquals("Apache Kafka for Developers using Spring Boot1", updatedCourseDTO?.name)
+
     }
 
     @Test
@@ -161,11 +177,13 @@ class CourseControllerUnitTest {
 
         every { courseServiceMock.deleteCourse(any()) } just runs
 
-        val updatedCourse = webTestClient
+        webTestClient
             .delete()
             .uri("/v1/courses/{courseId}", 100)
             .exchange()
             .expectStatus().isNoContent
+
+        verify(exactly = 1) { courseServiceMock.deleteCourse(any()) }
 
     }
 }
