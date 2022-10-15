@@ -26,7 +26,8 @@ class CourseController(
     }
 
     @GetMapping
-    fun retrieveAllCourses(): List<CourseDTO> = courseService.retrieveAllCourses()
+    fun retrieveAllCourses(@RequestParam("course_name", required = false) courseName: String?): List<CourseDTO> =
+        courseService.retrieveAllCourses(courseName)
 
     //courseId
     @PutMapping("/{course_id}")

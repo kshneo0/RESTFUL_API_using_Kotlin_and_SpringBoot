@@ -95,13 +95,13 @@ class CourseControllerUnitTest {
             .returnResult()
             .responseBody
 
-        assertEquals(errorMessage , response)
+        assertEquals(errorMessage, response)
     }
 
     @Test
     fun retrieveAllCourses() {
 
-        every { courseServiceMock.retrieveAllCourses() }.returnsMany(
+        every { courseServiceMock.retrieveAllCourses(any()) }.returnsMany(
             listOf(
                 CourseDTO(
                     1,
